@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'CODNIX IDE',
   description: 'Ambiente de desenvolvimento profissional com múltiplas inteligências artificiais — OpenRouter, editor Monaco, terminal real e colaboração entre IAs.',
   applicationName: 'CODNIX IDE',
+  icons: { icon: '/favicon.svg' },
 };
 
 export const viewport: Viewport = {

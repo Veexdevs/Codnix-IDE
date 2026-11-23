@@ -27,9 +27,6 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
-      - name: Instalar Capacitor
-        run: npm i -D @capacitor/cli@6 @capacitor/core@6 @capacitor/android@6
-
       - name: Preparar plataforma Android
         run: |
           npx cap add android || true
