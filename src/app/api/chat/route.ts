@@ -15,6 +15,59 @@ interface ChatBody {
   stream?: boolean;
 }
 
+
+// Smoke-test GET: valida chave + modelo com uma resposta curta sem streaming.
+// Usado pelo botao "Testar" e para diagnostico rapido da integracao.
+export async function GET(req: NextRequest) {
+  const { key } = await resolveApiKey();
+  if (!key) {
+    return Response.json(
+      { ok: false, code: 'NO_API_KEY', error: 'Nenhuma chave da API do OpenRouter configurada. Abra Configurações → OpenRouter.' },
+      { status: 401 }
+    );
+  }
+  const model = req.nextUrl.searchParams.get('model') || 'openrouter/free';
+  const text = req.nextUrl.searchParams.get('text') || 'Responda em uma frase curta: você está funcionando?';
+  try {
+    const res = await fetch(`${OR_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: orHeaders(key),
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: text }],
+        max_tokens: 60,
+        stream: false,
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      const mapped = mapOpenRouterError(res.status, body);
+      return Response.json({ ok: false, code: mapped.code, error: mapped.message, model }, { status: mapped.status });
+    }
+    const json = (await res.json()) as {
+      model?: string;
+      choices?: { message?: { content?: string } }[];
+      usage?: Record<string, number>;
+      error?: { message?: string };
+    };
+    if (json.error) {
+      return Response.json({ ok: false, error: json.error.message, model }, { status: 502 });
+    }
+    return Response.json({
+      ok: true,
+      model: json.model || model,
+      reply: json.choices?.[0]?.message?.content || '',
+      usage: json.usage || null,
+    });
+  } catch (e) {
+    return Response.json(
+      { ok: false, code: 'CONNECTION_ERROR', error: `Falha de conexão com o OpenRouter: ${e instanceof Error ? e.message : e}`, model },
+      { status: 502 }
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   let body: ChatBody;
   try {

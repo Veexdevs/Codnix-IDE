@@ -12,7 +12,7 @@ interface ORRawModel {
   description?: string;
   context_length?: number;
   pricing?: { prompt?: string; completion?: string; request?: string; image?: string };
-  architecture?: { input_modalities?: string[]; modality?: string };
+  architecture?: { input_modalities?: string[]; output_modalities?: string[]; modality?: string };
 }
 
 interface CacheEntry {
@@ -29,7 +29,9 @@ function isFree(m: ORRawModel): boolean {
   const prompt = p.prompt ?? '1';
   const completion = p.completion ?? '1';
   const request = p.request ?? '0';
-  return parseFloat(prompt) === 0 && parseFloat(completion) === 0 && parseFloat(request) === 0;
+  // apenas modelos de saida de texto (exclui geradores de imagem/musica gratuitos)
+  const outputsText = !m.architecture?.output_modalities || m.architecture.output_modalities.includes('text');
+  return outputsText && parseFloat(prompt) === 0 && parseFloat(completion) === 0 && parseFloat(request) === 0;
 }
 
 function normalize(m: ORRawModel): ORModel {
