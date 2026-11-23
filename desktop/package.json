@@ -1,0 +1,32 @@
+{
+  "name": "codnix-ide-desktop",
+  "version": "1.0.0",
+  "description": "CODNIX IDE - Desktop (Windows)",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable",
+    "dist:dir": "electron-builder --win --dir"
+  },
+  "devDependencies": {
+    "electron": "33.2.0",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.veexdevs.codnix",
+    "productName": "CODNIX IDE",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "splash.html"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "CODNIX-IDE-Setup-${version}.${ext}"
+    },
+    "portable": { "artifactName": "CODNIX-IDE-Portable-${version}.${ext}" }
+  }
+}

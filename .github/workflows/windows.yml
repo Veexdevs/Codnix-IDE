@@ -1,0 +1,48 @@
+name: Windows — EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ['android/**']
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependências do desktop (Electron)
+        working-directory: desktop
+        run: npm install
+
+      - name: Compilar instalador NSIS + portable
+        working-directory: desktop
+        run: npm run dist
+        env:
+          # electron-builder nao precisa de certificado para artefatos nao assinados
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Preparar artefatos
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Copy-Item desktop/dist/*.exe out/
+          Get-ChildItem out
+
+      - name: Publicar artefatos
+        uses: actions/upload-artifact@v4
+        with:
+          name: codnix-windows-exe
+          path: out/*.exe
+          if-no-files-found: error
+
+# Observacoes:
+# - Gera "CODNIX-IDE-Setup-<versao>.exe" (instalador NSIS) e versao portable.
+# - Para assinatura de codigo, adicione o certificado via Secrets (ex.: WINDOWS_CERTIFICATE_PFX
+#   e senha) e configure signAndEditExecutable no electron-builder.

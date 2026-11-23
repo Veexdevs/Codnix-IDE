@@ -1,0 +1,63 @@
+name: iOS — IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ['desktop/**']
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Instalar Capacitor
+        run: npm i -D @capacitor/cli@6 @capacitor/core@6 @capacitor/ios@6
+
+      - name: Preparar plataforma iOS
+        run: |
+          npx cap add ios || true
+          npx cap sync ios
+
+      - name: Build não assinado (sem credenciais de assinatura)
+        if: ${{ secrets.IOS_CERTIFICATE_P12 == '' }}
+        run: |
+          cd ios/App
+          xcodebuild -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" AD_HOC_CODE_SIGNING_ALLOWED=YES
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -type d -name "App.app" -path "*Release-iphoneos*" | head -1)
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -r ../../codnix-ios-unsigned.ipa Payload
+          cd ../..
+
+      - name: Build assinado (quando segretos configurados)
+        if: ${{ secrets.IOS_CERTIFICATE_P12 != '' }}
+        run: |
+          echo "Para builds assinados, configure os Secrets:"
+          echo "IOS_CERTIFICATE_P12 (cert .p12 em base64), IOS_CERTIFICATE_PASSWORD,"
+          echo "IOS_PROVISIONING_PROFILE (profile em base64) e ajuste os passos de assinatura."
+          exit 1
+
+      - name: Publicar artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: codnix-ios-ipa
+          path: codnix-ios-unsigned.ipa
+          if-no-files-found: error
+
+# Limitacoes (sem certificados de assinatura):
+# - O IPA gerado NAO e assinado: nao pode ser instalado direto em iPhone sem jailbreak
+#   nem publicado na App Store.
+# - Pode ser usado com Ferramentas como AltStore/Sideloadly mediante conta Apple propria.
+# - Com certificados + provisioning profiles nos Secrets do GitHub, o build assinado
+#   produz IPA instalavel (TestFlight/App Store).

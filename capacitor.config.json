@@ -1,0 +1,13 @@
+{
+  "appId": "com.veexdevs.codnix",
+  "appName": "CODNIX IDE",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://codnix-ide.vercel.app",
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "android": { "allowMixedContent": false },
+  "backgroundColor": "#0a0a0b"
+}
