@@ -3,7 +3,16 @@
 // das alteracoes de volta para o storage do projeto.
 import { NextRequest, NextResponse } from 'next/server';
 import { exec } from 'node:child_process';
+import fsSync from 'node:fs';
 import path from 'node:path';
+
+function fsExistsSync(p: string): boolean {
+  try {
+    return fsSync.existsSync(p);
+  } catch {
+    return false;
+  }
+}
 import { ensureWorkspace, materialize, syncBack, workspaceDir } from '@/lib/workspace';
 import { getProject } from '@/lib/storage';
 
@@ -104,7 +113,13 @@ export async function POST(req: NextRequest) {
   }
 
   const timeoutMs = Math.min(Math.max(body.timeout || 30000, 2000), 55000);
-  const shell = process.platform === 'win32' ? 'cmd.exe' : (body.shell === 'sh' ? '/bin/sh' : '/bin/bash');
+  // bash quando disponivel; sh como fallback (runtimes serverless sem bash)
+  const shell =
+    process.platform === 'win32'
+      ? 'cmd.exe'
+      : body.shell === 'sh' || !fsExistsSync('/bin/bash')
+        ? '/bin/sh'
+        : '/bin/bash';
 
   const cwdAbs = path.isAbsolute(session.cwd) ? session.cwd : path.join(session.dir, session.cwd);
 
