@@ -1,0 +1,38 @@
+name: CI — Validação e Testes
+
+on:
+  push:
+    branches: [main, '**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificar tipos (TypeScript)
+        run: npm run typecheck
+
+      - name: Testes unitários
+        run: npm test
+
+      - name: Build de produção
+        run: npm run build
+        env:
+          # build nao precisa de chave real — rotas sao dinamicas
+          OPENROUTER_API_KEY: ''
+
+      - name: Resumo
+        run: echo "✅ CODNIX IDE validado com sucesso"
