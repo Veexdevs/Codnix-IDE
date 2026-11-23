@@ -8,7 +8,9 @@ import path from 'node:path';
 import { supabaseConfigured, supaRest } from './supabase-rest';
 import type { Conversation, Project } from '@/types';
 
-const DATA_DIR = process.env.CODNIX_DATA_DIR || path.join(process.cwd(), 'data');
+const DATA_DIR =
+  process.env.CODNIX_DATA_DIR ||
+  (process.env.VERCEL ? '/tmp/codnix-data' : path.join(process.cwd(), 'data'));
 
 const projectsDir = () => path.join(DATA_DIR, 'projects');
 const chatsDir = () => path.join(DATA_DIR, 'chats');
@@ -141,7 +143,7 @@ function rowToProject(row: Record<string, unknown>): Project {
 const sbImpl = {
   async listProjects(): Promise<Meta[]> {
     const rows = await supaRest<Record<string, unknown>[]>('codnix_projects', {
-      query: { order: 'updated_at', asc: 'false', limit: '200' },
+      query: { order: 'updated_at.desc', limit: '200' },
     });
     return (rows || []).map((r) => metaOf(rowToProject(r)));
   },
@@ -190,7 +192,7 @@ const sbImpl = {
   },
   async listConversations(): Promise<Conversation[]> {
     const rows = await supaRest<Record<string, unknown>[]>('codnix_chats', {
-      query: { order: 'updated_at', asc: 'false', limit: '100' },
+      query: { order: 'updated_at.desc', limit: '100' },
     });
     return (rows || []).map(rowToConversation);
   },
