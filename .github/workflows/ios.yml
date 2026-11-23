@@ -29,24 +29,15 @@ jobs:
           npx cap add ios || true
           npx cap sync ios
 
-      - name: Build não assinado (sem credenciais de assinatura)
-        if: ${{ secrets.IOS_CERTIFICATE_P12 == '' }}
+      - name: Build não assinado
         run: |
           cd ios/App
-          xcodebuild -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" AD_HOC_CODE_SIGNING_ALLOWED=YES
+          xcodebuild -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY=""
           APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -type d -name "App.app" -path "*Release-iphoneos*" | head -1)
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
-          zip -r ../../codnix-ios-unsigned.ipa Payload
+          zip -q -r ../../codnix-ios-unsigned.ipa Payload
           cd ../..
-
-      - name: Build assinado (quando segretos configurados)
-        if: ${{ secrets.IOS_CERTIFICATE_P12 != '' }}
-        run: |
-          echo "Para builds assinados, configure os Secrets:"
-          echo "IOS_CERTIFICATE_P12 (cert .p12 em base64), IOS_CERTIFICATE_PASSWORD,"
-          echo "IOS_PROVISIONING_PROFILE (profile em base64) e ajuste os passos de assinatura."
-          exit 1
 
       - name: Publicar artefato
         uses: actions/upload-artifact@v4
@@ -56,8 +47,9 @@ jobs:
           if-no-files-found: error
 
 # Limitacoes (sem certificados de assinatura):
-# - O IPA gerado NAO e assinado: nao pode ser instalado direto em iPhone sem jailbreak
-#   nem publicado na App Store.
-# - Pode ser usado com Ferramentas como AltStore/Sideloadly mediante conta Apple propria.
-# - Com certificados + provisioning profiles nos Secrets do GitHub, o build assinado
-#   produz IPA instalavel (TestFlight/App Store).
+# - O IPA gerado NAO e assinado: nao pode ser instalado direto em iPhone nem publicado na App Store.
+# - Pode ser usado com AltStore/Sideloadly mediante conta Apple propria.
+# - Para build assinado (TestFlight/App Store), configure os Secrets do GitHub
+#   (IOS_CERTIFICATE_P12 em base64, IOS_CERTIFICATE_PASSWORD, IOS_PROVISIONING_PROFILE em base64)
+#   e adicione os passos de importacao do certificado + instalacao do profile + assinatura
+#   antes do xcodebuild, removendo CODE_SIGNING_ALLOWED=NO.
