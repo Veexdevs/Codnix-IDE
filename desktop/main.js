@@ -15,7 +15,6 @@ function createWindow() {
     minHeight: 600,
     backgroundColor: '#0a0a0b',
     title: 'CODNIX IDE',
-    icon: path.join(__dirname, 'build', 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
